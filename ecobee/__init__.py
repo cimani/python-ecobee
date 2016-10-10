@@ -121,7 +121,7 @@ class Client(object):
         # a previous auth was in progress
         if self.auth.get('token_type') == 'authorize' and datetime.datetime.now() < self.auth['expiration']:
             self.log.debug("Waiting for user to authorize application.")
-            return self.auth['ecobee_pin']
+            return self.authorize_finish()
 
         self.log.info("Starting authorization")
         response = self._raw_get("authorize", response_type='ecobeePin', client_id=self.apikey, scope=self.scope)
@@ -176,7 +176,13 @@ You have {expiry} minutes.
         if not self.auth.get('refresh_token'):
             self.log.info("No refresh token, authorizing.")
             self.auth.token_type = None
-            raise AuthRequired(self.authorize_start())
+            pin = self.authorize_start()
+            if pin:
+                # authorize_start created a new pin!
+                raise AuthRequired(pin)
+            else:
+                # authorize_start must have successfully authorized, just return
+                return
 
         # don't refresh if not yet expired
         if not force and ('expiration' in self.auth and
