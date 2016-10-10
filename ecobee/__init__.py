@@ -39,7 +39,7 @@ class AuthRequired(Exception):
     def __init__(self, ecobeePin):
         self.ecobeePin = ecobeePin
     def __str__(self):
-        return "Please use ecobee dashboard -> MY APPS to add this application using code %s" % self.echobeePin
+        return "Please use ecobee dashboard -> MY APPS to add this application using code %s" % self.ecobeePin
 
 class Client(object):
     """Ecobee thermostat.
