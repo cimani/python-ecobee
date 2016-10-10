@@ -119,7 +119,7 @@ class Client(object):
             return
 
         # a previous auth was in progress
-        if self.auth.get('token_type') == 'authorize':
+        if self.auth.get('token_type') == 'authorize' and datetime.datetime.now() < self.auth['expiration']:
             self.log.debug("Waiting for user to authorize application.")
             return self.auth['ecobee_pin']
 
