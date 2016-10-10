@@ -219,7 +219,7 @@ You have {expiry} minutes.
         self.auth["refresh_token"] = result["refresh_token"]
         self.auth["expiration"]    = datetime.datetime.now() + datetime.timedelta(minutes=int(result["expires_in"]))
         self.auth["required"]      = False
-        
+
         self.log.info('Refresh token: %s' % self.auth["token_type"])
 
     def thermostatSummary(self):
