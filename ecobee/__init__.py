@@ -98,7 +98,7 @@ class Client(object):
                 self.auth = shelve.open(os.path.join(os.getenv('HOME'), '.config', 'ecobee'))
 
         # authorize on start
-        self.authorize_refresh(force=True)
+        #self.authorize_refresh(force=False)
 
 
     @property
@@ -121,7 +121,7 @@ class Client(object):
         # a previous auth was in progress
         if self.auth.get('token_type') == 'authorize' and datetime.datetime.now() < self.auth['expiration']:
             self.log.debug("Waiting for user to authorize application.")
-            return self.auth['ecobee_pin']
+            return self.authorize_finish()
 
         self.log.info("Starting authorization")
         response = self._raw_get("authorize", response_type='ecobeePin', client_id=self.apikey, scope=self.scope)
@@ -176,7 +176,14 @@ You have {expiry} minutes.
         if not self.auth.get('refresh_token'):
             self.log.info("No refresh token, authorizing.")
             self.auth.token_type = None
-            raise AuthRequired(self.authorize_start())
+            self.auth.clear()
+            pin = self.authorize_start()
+            if pin:
+                # authorize_start created a new pin!
+                raise AuthRequired(pin)
+            else:
+                # authorize_start must have successfully authorized, just return
+                return
 
         # don't refresh if not yet expired
         if not force and ('expiration' in self.auth and
@@ -188,6 +195,12 @@ You have {expiry} minutes.
                                   grant_type = 'refresh_token',
                                   code       = self.auth['refresh_token'],
                                   client_id  = self.apikey)
+        if not response.ok:
+            self.log.error('Refresh token failed. clearing auth to restart.')
+            self.auth.clear()
+            self.log.error(result['error_description'])
+            raise AuthRequired(self.authorize_start())
+            
         self._authorize_update(response)
 
 
@@ -206,7 +219,8 @@ You have {expiry} minutes.
         self.auth["refresh_token"] = result["refresh_token"]
         self.auth["expiration"]    = datetime.datetime.now() + datetime.timedelta(minutes=int(result["expires_in"]))
         self.auth["required"]      = False
-
+        
+        self.log.info('Refresh token: %s' % self.auth["token_type"])
 
     def thermostatSummary(self):
         """Summary of available thermostats.  Calls API endpoint /thermostatSummary """
