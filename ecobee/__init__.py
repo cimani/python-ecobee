@@ -35,6 +35,11 @@ class EcobeeException(Exception):
     """Ecobee error"""
     pass
 
+class AuthRequired(Exception):
+    def __init__(self, ecobeePin):
+        self.ecobeePin = ecobeePin
+    def __str__(self):
+        return "Please use ecobee dashboard -> MY APPS to add this application using code %s" % self.echobeePin
 
 class Client(object):
     """Ecobee thermostat.
@@ -137,6 +142,8 @@ authorization code: {pin}
 Then follow the prompts to add your application.
 You have {expiry} minutes.
 """.format(pin=result['ecobeePin'], expiry=result['expires_in']))
+        
+        return result['ecobeePin']
 
 
     def authorize_finish(self):
@@ -150,7 +157,7 @@ You have {expiry} minutes.
         # hah, timed out, try again.
         if datetime.datetime.now() > self.auth['expiration']:
             self.auth['access_token'] = None
-            return self.authorize_start()
+            raise AuthRequired(self.authorize_start())
 
         self.log.info("Finalizing authorization")
         response = self._raw_post('token',
@@ -168,7 +175,7 @@ You have {expiry} minutes.
         if not self.auth.get('refresh_token'):
             self.log.info("No refresh token, authorizing.")
             self.auth.token_type = None
-            return self.authorize_start()
+            raise AuthRequired(self.authorize_start())
 
         # don't refresh if not yet expired
         if not force and ('expiration' in self.auth and
@@ -483,7 +490,7 @@ You have {expiry} minutes.
                 self.log.warning("error 16: restarting authentication")
                 self.auth['refresh_token'] = None
                 self.auth['token_type'] = None
-                return self.authorize_start()
+                raise AuthRequired(self.authorize_start())
 
             # otherwise just raise it
             errmsg = '{}: {}'.format(data['status']['code'], data['status']['message'])
