@@ -121,7 +121,7 @@ class Client(object):
         # a previous auth was in progress
         if self.auth.get('token_type') == 'authorize':
             self.log.debug("Waiting for user to authorize application.")
-            return self.authorize_finish()
+            return self.auth['ecobee_pin']
 
         self.log.info("Starting authorization")
         response = self._raw_get("authorize", response_type='ecobeePin', client_id=self.apikey, scope=self.scope)
@@ -130,6 +130,7 @@ class Client(object):
             return
 
         result = response.json()
+        self.auth['ecobee_pin'] = result['ecobeePin']
         self.auth['access_token'] = result['code']
         self.auth['token_type'] = 'authorize'
         self.auth['expiration'] = datetime.datetime.now() + datetime.timedelta(minutes=int(result['expires_in']))
