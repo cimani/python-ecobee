@@ -198,7 +198,6 @@ You have {expiry} minutes.
         if not response.ok:
             self.log.error('Refresh token failed. clearing auth to restart.')
             self.auth.clear()
-            self.log.error(result['error_description'])
             raise AuthRequired(self.authorize_start())
             
         self._authorize_update(response)
