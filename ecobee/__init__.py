@@ -376,8 +376,8 @@ You have {expiry} minutes.
             else:
                 coolHoldTemp = int(coolHoldTemp * 10)
 
-            params['heatHoldTemp'] = heatHoldTemp,
-            params['coolHoldTemp'] = coolHoldTemp,
+            params['heatHoldTemp'] = heatHoldTemp
+            params['coolHoldTemp'] = coolHoldTemp
 
 
         if holdType == 'holdHours':
